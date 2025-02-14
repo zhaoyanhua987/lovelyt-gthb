@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片展示页面</title>
+    <!-- 引入 Element Plus 的 CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <!-- 引入自定义 CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 页面标题 -->
+        <h1 class="page-title">图片也是一种回忆</h1>
+        <p class="sub-text">因无高性能服务器及数据库因此仅展示功能用</p>
+        <!-- 图片展示区域 -->
+        <div class="gallery">
+            <div v-for="(image, index) in images" :key="index" class="image-container">
+                <div class="image-wrapper">
+                    <img :src="image.src" :alt="image.alt" class="image">
+                </div>
+                <div class="caption">{{ image.caption }}</div>
+            </div>
+        </div>
+
+        <!-- 添加图片的按钮（固定在右下角） -->
+        <el-button type="primary" class="add-button" @click="dialogVisible = true">添加图片</el-button>
+
+        <!-- 添加图片的对话框 -->
+        <el-dialog v-model="dialogVisible" title="添加图片(可选择网络图片，本地图片路径./img/1~10.jpg)" width="30%">
+            <el-form :model="newImage">
+                <el-form-item label="图片URL">
+                    <el-input v-model="newImage.src"></el-input>
+                </el-form-item>
+                <el-form-item label="备注">
+                    <el-input v-model="newImage.caption"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="addImage">确定</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <!-- 引入 Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- 引入 Element Plus -->
+    <script src="https://unpkg.com/element-plus"></script>
+    <!-- 引入自定义 JavaScript -->
+    <script src="scripts.js"></script>
+</body>
+</html>
