@@ -1,0 +1,418 @@
+<!-- 页面总结:播放,暂停,自动播放有bug,但是页面刷新后bug会消失,原因具体未知 -->
+ <!-- 使用技术:v3+html+js+css+element+音乐pause模块+fontawesome-->
+  <!-- 始创建于比赛车机音乐卡片设计,使用v3+html+css+uniapp+uview设计,因音乐无法正常播放,因此设计此页面 -->
+   <!-- 所有界面均为个人编写及AI辅助编译 -->
+   <!-- 完工时间2025-3-3 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>个人音乐卡片</title>
+    <!-- 引入V3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- 引入Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+</head>
+<body>
+    <div id="app">
+        <div class="player-container">
+            <!-- 返回 -->
+            <a href="../index.html">
+            <div class="back-btn" @click="goBack">
+                <i class="fa-solid fa-arrow-left"></i>
+                
+            </div>
+            </a>
+            <!-- 歌曲title -->
+            <div class="song-title">{{ currentSong.title }}</div>
+
+            <!-- 内容区域 -->
+            <div class="content">
+                <!-- 左侧唱片区域 -->
+                <div class="cover-container">
+                    <div class="cover" 
+                         :class="{ rotating: isPlaying }"
+                         :style="{ backgroundImage: `url(${currentSong.cover})` }">
+                    </div>
+                </div>
+
+                <!-- 右侧歌词区域 -->
+                <div class="lyrics" ref="lyricsBox">
+                    <div v-for="(line, index) in currentSong.lyrics" 
+                         :key="index"
+                         class="lyric-line"
+                         :class="{ active: currentLyricIndex === index }">
+                        {{ line.text }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 进度条 -->
+             <!-- 无法使用控制进度条调整进度,只用展示歌曲进度用 -->
+            <div class="progress-bar">
+                <div class="progress" :style="{ width: progress + '%' }"></div>
+            </div>
+
+            <!-- 底部控制栏 -->
+            <div class="control-bar">
+                <button @click="prevSong" class="control-btn">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+                
+                <button @click="togglePlay" class="control-btn play-btn">
+                    <i class="fa-solid" :class="isPlaying ? 'fa-pause' : 'fa-play'"></i>
+                </button>
+                
+                <button @click="nextSong" class="control-btn">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+            </div>
+
+            <!-- 音频元素 -->
+            <audio ref="audioPlayer" :src="currentSong.audio" @timeupdate="updateProgress"></audio>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, watch, computed, onMounted } = Vue
+
+        const app = createApp({
+            setup() {
+                const isPlaying = ref(false)
+                const currentLyricIndex = ref(0)
+                const lyricsBox = ref(null)
+                const progress = ref(0)
+                const audioPlayer = ref(null)
+
+                const songs = [
+                    {
+                        title: 'My R',
+                        cover: './musicsImg/myr.jpg',
+                        audio: './music/Lollia - My R.mp3',
+                        lyrics: [
+                            { time: 0, text: 'My R' },
+                            { time: 0, text: '仅做展示用,录入部分歌词' },
+                            { time: 1, text: 'Just as I was about to take my shoes off' },
+                            { time: 4, text: 'On the rooftop ,there I see' },
+                            { time: 6, text: 'A girl with braided hair here before me' },
+                            { time: 8, text: 'Despite myself，I go and scream' },
+                            { time: 11, text: 'Hey，don’t do it please' },
+                            { time: 22, text: 'Whoa, wait a minute what did I just say ?' },
+                            { time: 24, text: 'I couldn’t care less either way' },
+                            { time: 27, text: 'To be honest，I was somewhat pissed' },
+                            { time: 29, text: 'This was an opportunity to be missed' },
+                            { time: 32, text: 'The girl with braided hair told me her woes' },
+                            { time: 34, text: 'You’ve probably heard it all before' },
+                            { time: 36, text: 'I really thought that he might be the one' },
+                            { time: 38, text: 'But then he told me he was done' },
+                            { time: 40, text: 'For god’s sake please' },
+                            { time: 42, text: 'Are you serious ? I just can’t believe' },
+                            { time: 43, text: '仅做展示用,录入部分歌词' },
+                        ]
+                    },
+                    {
+                        title: '不思议的',
+                        cover: './musicsImg/busiyi.jpg',
+                        audio: './music/busiyi.mp3',
+                        lyrics: [
+                            { time: 0, text: '歌曲2' },
+                            { time: 1, text: '纯音乐-请欣赏' },
+                        ]
+                    },
+                    {
+                        title: '冰上的尤里',
+                        cover: './musicsImg/youli.jpg',
+                        audio: './music/梅林太郎 - Yuri on ICE.mp3',
+                        lyrics: [
+                            { time: 0, text: '歌曲3' },
+                            { time: 1, text: '纯音乐-请欣赏' },
+                            
+                        ]
+                    }
+                ]
+
+                const currentSongIndex = ref(0)
+                const currentSong = computed(() => songs[currentSongIndex.value])
+                
+                // 播放控制
+                const togglePlay = () => {
+                    if (isPlaying.value) {
+                        audioPlayer.value.pause()
+                    } else {
+                        audioPlayer.value.play().catch(error => {
+                            console.error('播放失败:', error)
+                        })
+                    }
+                    isPlaying.value = !isPlaying.value
+                }
+
+                const changeSong = (direction) => {
+                    // 停止当前播放
+                    audioPlayer.value.pause()
+                    
+                    // 计算新歌曲索引
+                    currentSongIndex.value = (currentSongIndex.value + direction + songs.length) % songs.length
+                    
+                    // 重置播放状态
+                    resetPlayer()
+                    
+                    // 自动播放新歌曲
+                    setTimeout(() => {
+                        audioPlayer.value.play().then(() => {
+                            isPlaying.value = true
+                        }).catch(error => {
+                            console.error('自动播放失败:', error)
+                            isPlaying.value = false
+                        })
+                    }, 100)
+                }
+
+                const prevSong = () => changeSong(-1)
+                const nextSong = () => changeSong(1)
+                // 开始播放,所有值设为0
+                const resetPlayer = () => {
+                    progress.value = 0
+                    currentLyricIndex.value = 0
+                    audioPlayer.value.currentTime = 0
+                }
+                // 进度条部分
+                const updateProgress = () => {
+                    const currentTime = audioPlayer.value.currentTime
+                    const duration = audioPlayer.value.duration
+                    if (duration) {
+                        progress.value = (currentTime / duration) * 100
+                    }
+                    updateLyrics(currentTime)
+                }
+                // 歌词处理部分,自动跳歌词
+                const updateLyrics = (currentTime) => {
+                    const lyrics = currentSong.value.lyrics
+                    for (let i = lyrics.length - 1; i >= 0; i--) {
+                        if (currentTime >= lyrics[i].time) {
+                            currentLyricIndex.value = i
+                            break
+                        }
+                    }
+                }
+                // 返回功能,因router无法调用,原因为非vue框架文件,挂载端无法使用npm,所以暂使用html的a标签进行跳转,因不影响功能代码暂不注释
+                const goBack = () => {
+                    console.log('返回')
+                    router.go(-1)
+                }
+
+                // 处理音频结束事件
+                const handleAudioEnd = () => {
+                    isPlaying.value = false
+                    nextSong()
+                }
+
+                // 初始化
+                onMounted(() => {
+                    audioPlayer.value.addEventListener('ended', handleAudioEnd)
+                })
+
+                // 歌词滚动跟踪,此段尝试ai解决问题但未实现,因不影响功能代码暂不注释
+                // 问题已解决
+                watch(currentLyricIndex, (newVal) => {
+                    if (lyricsBox.value) {
+                        const lineHeight = 28
+                        lyricsBox.value.scrollTo({
+                            top: newVal * lineHeight - 100,
+                            behavior: 'smooth'
+                        })
+                    }
+                })
+                // vue内设置的所有值都要返回
+                return {
+                    isPlaying,
+                    currentLyricIndex,
+                    lyricsBox,
+                    progress,
+                    currentSongIndex,
+                    currentSong,
+                    audioPlayer,
+                    togglePlay,
+                    prevSong,
+                    nextSong,
+                    updateProgress,
+                    goBack
+                }
+            }
+        })
+
+        app.mount('#app')
+    </script>
+</body>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #f5f7fa;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+    
+    .player-container {
+        width: 800px;
+        padding: 40px;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        position: relative;
+    }
+
+    .back-btn {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: #909399;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+        color: #409eff;
+        transform: scale(1.1);
+    }
+
+    .song-title {
+        text-align: center;
+        font-size: 24px;
+        font-weight: 500;
+        color: #303133;
+        margin-bottom: 30px;
+    }
+
+    .content {
+        display: flex;
+        gap: 40px;
+        margin-bottom: 30px;
+    }
+
+    /* 唱片样式 */
+    .cover-container {
+        width: 250px;
+        height: 250px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .cover {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: #eee center/cover;
+        border: 8px solid #fff;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        transition: transform 0.8s linear, background-image 0.5s ease;
+        position: relative;
+    }
+
+    .cover::after {
+        content: '';
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #fff;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: inset 0 0 0 4px #f5f7fa;
+    }
+
+    .rotating {
+        animation: rotate 15s linear infinite;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* 歌词区域 */
+    .lyrics {
+        flex: 1;
+        height: 250px;
+        overflow-y: auto;
+        color: #606266;
+        font-size: 16px;
+        line-height: 28px;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 12px;
+        scroll-behavior: smooth;
+    }
+
+    .lyric-line {
+        transition: all 0.3s ease;
+    }
+
+    .lyric-line.active {
+        color: #409eff;
+        font-weight: 500;
+        transform: scale(1.02);
+    }
+
+    /* 进度条 */
+    .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: #e4e7ed;
+        border-radius: 3px;
+        margin: 30px 0;
+        overflow: hidden;
+    }
+
+    .progress {
+        height: 100%;
+        background: #409eff;
+        width: 0;
+        transition: width 0.5s linear;
+    }
+
+    /* 控制栏 */
+    .control-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+    }
+
+    .control-btn {
+        color: #909399;
+        transition: all 0.3s ease;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .control-btn:hover {
+        color: #409eff;
+        transform: scale(1.1);
+    }
+
+    .fa-solid {
+        font-size: 24px;
+    }
+
+    .play-btn .fa-solid {
+        font-size: 36px;
+    }
+
+    /* 隐藏的音频元素 */
+    audio {
+        display: none;
+    }
+</style>
+</html>
