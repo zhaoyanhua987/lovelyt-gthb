@@ -58,6 +58,10 @@ const app = createApp({
                 src: './img/zhengshu.png',
                 alt: '图片11',
                 caption: '省三证书'
+            },{
+                src: './img/1x.png',
+                alt: '图片12',
+                caption: '1+x证书'
             }
         ]);
 
