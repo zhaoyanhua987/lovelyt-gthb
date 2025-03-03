@@ -53,7 +53,11 @@ const app = createApp({
                 src: './img/10.jpg',
                 alt: '图片10',
                 caption: '荧鹭'
-            },
+            },{
+                src: './img/df079cc0f4f632824f7711a36ed9829.png',
+                alt: '图片11',
+                caption: '省三证书'
+            }
         ]);
 
         // 对话框是否可见
